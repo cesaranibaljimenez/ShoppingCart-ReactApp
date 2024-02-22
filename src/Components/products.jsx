@@ -1,3 +1,7 @@
+import React from "react";
+import ReactBootstrap from 'react-bootstrap';
+import axios from 'axios';
+
 // sumulate getting products from DataBase
 const products = [
     { name: "Apples_:", country: "Italy", cost: 3, instock: 10 },
@@ -219,6 +223,5 @@ const products = [
       </Container>
     );
   };
-  // ========================================
-  ReactDOM.render(<Products />, document.getElementById("root"));
+  
   

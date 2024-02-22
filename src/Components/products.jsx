@@ -1,6 +1,16 @@
 import React from "react";
 import ReactBootstrap from 'react-bootstrap';
 import axios from 'axios';
+import {
+    Card,
+    Accordion,
+    Button,
+    Container,
+    Row,
+    Col,
+    Image,
+    Input,
+  } from 'react-bootstrap';
 
 // sumulate getting products from DataBase
 const products = [
@@ -82,16 +92,7 @@ const products = [
     const [items, setItems] = React.useState(products);
     const [cart, setCart] = React.useState([]);
     const [total, setTotal] = React.useState(0);
-    const {
-      Card,
-      Accordion,
-      Button,
-      Container,
-      Row,
-      Col,
-      Image,
-      Input,
-    } = ReactBootstrap;
+    
     //  Fetch Data
     const { Fragment, useState, useEffect, useReducer } = React;
     const [query, setQuery] = useState("http://localhost:1337/products");

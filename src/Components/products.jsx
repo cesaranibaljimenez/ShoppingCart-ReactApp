@@ -225,4 +225,5 @@ const products = [
     );
   };
   
+  export default Products;
   

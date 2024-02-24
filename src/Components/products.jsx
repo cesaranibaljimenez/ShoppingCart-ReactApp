@@ -1,6 +1,5 @@
-import React from "react";
-import ReactBootstrap from 'react-bootstrap';
-import axios from 'axios';
+import React from 'react';
+
 import {
     Card,
     Accordion,
@@ -9,18 +8,18 @@ import {
     Row,
     Col,
     Image,
-    Input,
-  } from 'react-bootstrap';
+} from 'react-bootstrap';
 
-// sumulate getting products from DataBase
+// Datos de productos
 const products = [
-    { name: "Apples_:", country: "Italy", cost: 3, instock: 10 },
-    { name: "Oranges:", country: "Spain", cost: 4, instock: 3 },
-    { name: "Beans__:", country: "USA", cost: 2, instock: 5 },
-    { name: "Cabbage:", country: "USA", cost: 1, instock: 8 },
-  ];
-  //=========Cart=============
-  const Cart = (props) => {
+    { name: "Apples_:", country: "Italy", cost: 3, instock: 10, image: 'apples.jpg' },
+    { name: "Oranges:", country: "Spain", cost: 4, instock: 3, image: 'oranges.jpg' },
+    { name: "Beans__:", country: "USA", cost: 2, instock: 5, image: 'beans.jpg' },
+    { name: "Cabbage:", country: "USA", cost: 1, instock: 8, image: 'cabbage.jpg' },
+];
+
+//=========Cart=============
+const Cart = (props) => {
     const { Card, Accordion, Button } = ReactBootstrap;
     let data = props.location.data ? props.location.data : products;
     console.log(`data:${JSON.stringify(data)}`);
@@ -88,57 +87,83 @@ const products = [
     }
   };
   
+  const generateImageURL = () => {
+    const randomId = Math.floor(Math.random() * 1000); // Genera un ID aleatorio entre 0 y 999
+    return `https://picsum.photos/id/${randomId}/50/50`;
+  };
+  
   const Products = (props) => {
     const [items, setItems] = React.useState(products);
     const [cart, setCart] = React.useState([]);
     const [total, setTotal] = React.useState(0);
-    
+    const {
+      Card,
+      Accordion,
+      Button,
+      Container,
+      Row,
+      Col,
+      Image,
+      Input,
+    } = ReactBootstrap;
     //  Fetch Data
     const { Fragment, useState, useEffect, useReducer } = React;
-    const [query, setQuery] = useState("http://localhost:1337/products");
+    const [query, setQuery] = useState("http://localhost:1337/api/products");
     const [{ data, isLoading, isError }, doFetch] = useDataApi(
-      "http://localhost:1337/products",
+      "http://localhost:1337/api/products",
       {
         data: [],
       }
     );
     console.log(`Rendering Products ${JSON.stringify(data)}`);
-    // Fetch Data
+    
+    //Función para agregar productos al carrito
     const addToCart = (e) => {
       let name = e.target.name;
-      let item = items.filter((item) => item.name == name);
-      if (item[0].instock == 0) return;
-      item[0].instock = item[0].instock - 1;
-      console.log(`add to Cart ${JSON.stringify(item)}`);
-      setCart([...cart, ...item]);
-    };
-    const deleteCartItem = (delIndex) => {
-      // this is the index in the cart not in the Product List
+      let item = items.filter((item) => item.name === name)[0];//Buscar el producto
+      if(item && item.instock > 0){
+        //Veficiar si hay suficiente stock
+        item.imageURL = generateImageURL(); // Asociar la URL de la imagen
+        setCart([...cart, item]);
+        //Reducir en 1 la cantidad de productos disponibles en el stock
+        setItems((prevItems) =>
+          prevItems.map((prevItem) =>
+          prevItem.name === item.name
+            ? {...prevItem, instock: prevItem.instock - 1}
+            : prevItem
+            )
+            );
+      }
+      };
+      
+       
   
-      let newCart = cart.filter((item, i) => delIndex != i);
-      let target = cart.filter((item, index) => delIndex == index);
-      let newItems = items.map((item, index) => {
-        if (item.name == target[0].name) item.instock = item.instock + 1;
-        return item;
-      });
-      setCart(newCart);
-      setItems(newItems);
+    //Función para eliminar productos del carrito
+    const deleteCartItem = (index) => {
+     const removedItem = cart[index];
+     setCart(cart.filter((item, i)=> i !== index));
+     setItems((prevItems) =>
+     prevItems.map((prevItem) =>
+      prevItem.name === removedItem.name ? { ...prevItem, instock: prevItem.instock + 1} : prevItem
+     )
+     );
     };
-    const photos = ["apple.png", "orange.png", "beans.png", "cabbage.png"];
+   
+    let productList = (
+      <ul style={{ listStyleType: "none" }}>
+        {items.map((item, index) => (
+          <li key={index}>
+            <Image src={item.imageURL} width={70} roundedCircle />
+            <Button variant="primary" size="large">
+              {item.name}:{item.cost} (stock: {item.instock})
+            </Button>
+            <input name={item.name} type="submit" onClick={addToCart}></input>
+          </li>
+        ))}
+      </ul>
+    );
+    
   
-    let list = items.map((item, index) => {
-      let n = index + 1049;
-      let uhit = "https://picsum.photos/" + n;
-      return (
-        <li key={index}>
-          <Image src={uhit} width={70} roundedCircle></Image>
-          <Button variant="primary" size="large">
-            {item.name}:${item.cost}-Stock={item.instock}
-          </Button>
-          <input name={item.name} type="submit" onClick={addToCart}></input>
-        </li>
-      );
-    });
     let cartList = cart.map((item, index) => {
       return (
         <Card key={index}>
@@ -176,24 +201,38 @@ const products = [
       const reducer = (accum, current) => accum + current;
       let newTotal = costs.reduce(reducer, 0);
       console.log(`total updated to ${newTotal}`);
-      //cart.map((item, index) => deleteCartItem(index));
       return newTotal;
     };
+    // TODO: implement the restockProducts function
+   
     const restockProducts = (url) => {
-      doFetch(url);
-      let newItems = data.map((item) => {
-        let { name, country, cost, instock } = item;
-        return { name, country, cost, instock };
-      });
-      setItems([...items, ...newItems]);
+      doFetch(url)
+        .then((response) => {
+          const newData = response.data;
+          let newItems = newData.map((item) => {
+            let { name, country, cost, instock } = item;
+            return { name, country, cost, instock };
+          });
+        
+          console.log('New Items:', newItems);
+          setItems((prevItems) => [...prevItems, ...newItems]); // Agregar nuevos productos sin sobrescribir los existentes
+          console.log(newItems);
+          console.log(items);
+        })
+        .catch((error) => {
+          console.error('Error al obtener datos:', error);
+        });
+        
     };
-  
+    
+    
+    
     return (
       <Container>
         <Row>
           <Col>
             <h1>Product List</h1>
-            <ul style={{ listStyleType: "none" }}>{list}</ul>
+            {productList}
           </Col>
           <Col>
             <h1>Cart Contents</h1>
@@ -208,7 +247,7 @@ const products = [
         <Row>
           <form
             onSubmit={(event) => {
-              restockProducts(`http://localhost:1337/${query}`);
+              restockProducts(`http://localhost:1337/api/products/${query}`);
               console.log(`Restock called on ${query}`);
               event.preventDefault();
             }}
@@ -225,5 +264,10 @@ const products = [
     );
   };
   
-  export default Products;
+export default Products;
+
+
+
+
+
   
